@@ -1,6 +1,6 @@
 from Tkinter import *
 
-def frame(root, side): 
+def frame(root,side): 
 	w = Frame(root)
 	w.pack(side=side, expand=YES, fill=BOTH)
 	return w
