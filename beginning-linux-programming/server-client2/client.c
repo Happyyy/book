@@ -12,7 +12,7 @@ int main()
 	int len;
 	int result;
 	struct sockaddr_in address;
-	char ch = 'A';
+	char ch = '1';
 //为客户端创建一个socket
 	sockfd = socket(AF_INET,SOCK_STREAM, 0);
 //根据服务器的情况命名socket
