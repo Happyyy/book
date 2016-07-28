@@ -5,35 +5,31 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#define MAXDATASIZE 100
 int main()
 {
 //定义一些变量
-	int sockfd;
-	int len;
-	int result;
-	struct sockaddr_in address;
-	char ch = '0';
+	int client_sockfd;
+	int server_addr_len;
+	struct sockaddr_in client_addr;
+	char mesg[MAXDATASIZE]="-v 9 -b 7 -m 7 -t 3";
 //为客户端创建一个socket
-	sockfd = socket(AF_INET,SOCK_STREAM, 0);
+	client_sockfd = socket(AF_INET,SOCK_STREAM, 0);
 //根据服务器的情况命名socket
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = inet_addr("127.0.0.1");
-	address.sin_port = htons(9734);
-	len = sizeof(address);
+	client_addr.sin_family = AF_INET;
+	client_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	client_addr.sin_port = htons(9734);
+	server_addr_len = sizeof(client_addr);
 //连接到服务器socket
-	result = connect(sockfd,(struct sockaddr *)&address, len);
-	if (result == -1)
-	{
-		perror("Oops: client1");
-		exit(1);
-	}
+	connect(client_sockfd,(struct sockaddr *)&client_addr, server_addr_len);
 //读写
-	write(sockfd, &ch, 1);
-	read(sockfd, &ch, 1);
-	printf("char from server = %c\n",ch);
-	close(sockfd);
+	send(client_sockfd, mesg, MAXDATASIZE, 0);
+	
+	close(client_sockfd);
 	exit(0);
 }
+
 
 
 
