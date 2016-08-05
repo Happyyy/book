@@ -11,11 +11,19 @@
 #include <mcapi_impl_spec.h>
 #include <getopt.h>
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 
 #define NUM_SIZES 1
 #define BUFF_SIZE 64
 #define DOMAIN 0
 #define NODE 0
+
+#define MAXDATASIZE 50
 
 #define MCAPI_AUDIO_VOL 0x81
 
@@ -68,7 +76,7 @@ static struct option const long_opts[] = {
 
 int main (int argc, char **argv) {
 
- int server_sockfd,client_sockfd;
+ 		int server_sockfd,client_sockfd;
         int server_len,client_len;
         struct sockaddr_in server_address;
         struct sockaddr_in client_address;
@@ -83,48 +91,83 @@ int main (int argc, char **argv) {
         bind(server_sockfd,(struct sockaddr *)&server_address,server_len);
 //creat listen
         listen(server_sockfd,5);
-        while(1) {
-                char ch;
-                printf("server waiting...\n");
+	while(1) {
+		char buf[MAXDATASIZE];
 //accept a connection
-                client_len = sizeof(client_address);
-                client_sockfd = accept(server_sockfd,(struct sockaddr *)&client_address,&client_len);
+		client_len = sizeof(client_address);
+		client_sockfd = accept(server_sockfd,(struct sockaddr *)&client_address,&client_len);
 //read and write
-                read(client_sockfd,&ch,1);
-             //   ch++;
-           //     write(client_sockfd,&ch,1);
-         //       close(client_sockfd);
-       // }
-	mcapi_status_t status;
-	mcapi_param_t parms;
-	mcapi_info_t version;
-	mcapi_endpoint_t ep1,ep2;
-	int i,s = 0, rc = 0,pass_num=0;
-	mcapi_uint_t avail;
-	int c;
-	int vol, bass, mid, treb;
-	struct mcapi_audio_cmd *cmd;
-	mcapi_request_t request;
+		if ((recvbytes=recv(server_client_sockfd, buf, MAXDATASIZE, 0)) ==-1) 
+     	{   perror("recv error！");
+        	exit(1);
+     	}
+        buf[recvbytes] = '\0';
+        printf("Received: %s",buf);
+	
+		mcapi_param_t parms;
+		mcapi_info_t version;
+		mcapi_endpoint_t ep1,ep2;
+		int i,s = 0, rc = 0,pass_num=0;
+		mcapi_uint_t avail;
+		int c;
+		int vol, bass, mid, treb;
+		struct mcapi_audio_cmd *cmd;
+		mcapi_request_t request;
 
 	/* create a node */
-	mcapi_initialize(DOMAIN,NODE,NULL,&parms,&version,&status);
-	if (status != MCAPI_SUCCESS) { WRONG }
+		mcapi_initialize(DOMAIN,NODE,NULL,&parms,&version,&status);
+		if (status != MCAPI_SUCCESS) { WRONG }
 
 	/* create endpoints */
-	ep1 = mcapi_endpoint_create(MASTER_PORT_NUM1,&status);
-	if (status != MCAPI_SUCCESS) { WRONG }
+		ep1 = mcapi_endpoint_create(MASTER_PORT_NUM1,&status);
+		if (status != MCAPI_SUCCESS) { WRONG }
 
-	ep2 = mcapi_endpoint_get (DOMAIN,SLAVE_NODE_NUM,SLAVE_PORT_NUM1,MCA_INFINITE,&status);
-	if (status != MCAPI_SUCCESS) { WRONG }
+		ep2 = mcapi_endpoint_get (DOMAIN,SLAVE_NODE_NUM,SLAVE_PORT_NUM1,MCA_INFINITE,&status);
+		if (status != MCAPI_SUCCESS) { WRONG }
 
 	/* send and recv messages on the endpoints */
 	/* regular endpoints */
-	cmd = (struct mcapi_audio_cmd*)cmd_buf;
+		cmd = (struct mcapi_audio_cmd*)cmd_buf;
+	
+	
+		char * split = "-";
+		char *p;
+		p = strtok(buf,split);
+		while(p != NULL) 
+		{
+			printf("%s\n",p);
+			switch (p[0]) {
+				case 'v':
+					vol = atoi(p[2]);
+                    cmd->cmd_head = MCAPI_AUDIO_VOL;
+                    cmd->arg0 = vol;
+                    break;
+				case 'b':
+                    bass = atoi(p[2]);
+                    cmd->arg1 = bass;
+                    break;
+                case 'm':
+                    mid = atoi(p[2]);
+                    cmd->arg2 = mid;
+                    break;
+                case 't':
+                    treb = atoi(p[2]);
+                    cmd->arg3 = treb;
+                    break;
+                case 'h':
+                    show_usage(1);                 
+                    break;
+                default:
+                    show_usage(1); 
+			}
+			p = strtok(NULL,split);
+		}      
 
-	while ((c=getopt_long(argc, argv, GETOPT_FLAGS, long_opts, NULL)) != -1) {
+/*	while ((c=getopt_long(argc, argv, GETOPT_FLAGS, long_opts, NULL)) != -1) {
 		switch (c) {
 			case 'v':
 				vol = atoi(optarg);
+				vol = atoi(buf[2]);
 				cmd->cmd_head = MCAPI_AUDIO_VOL;
 				cmd->arg0 = vol;
 				break;
@@ -148,39 +191,38 @@ int main (int argc, char **argv) {
 
 		}
 	}
+*/
+		mcapi_msg_send_i(ep1, ep2, cmd_buf, sizeof(struct mcapi_audio_cmd), 1, &request, &status);
+		if (status != MCAPI_SUCCESS) { WRONG }
+		printf("  griffin in tuning the sound\n");
 
 
-	mcapi_msg_send_i(ep1, ep2, cmd_buf, sizeof(struct mcapi_audio_cmd), 1, &request, &status);
-	if (status != MCAPI_SUCCESS) { WRONG }
+		cmd = (struct mcapi_audio_cmd*)ret_buf;
+		static int count = 0;
 
-	printf("  griffin in tuning the sound\n");
-
-
-	cmd = (struct mcapi_audio_cmd*)ret_buf;
-
-	static int count = 0;
-
-	while (1) {
-		avail = mcapi_msg_available(ep1, &status);
-		if (avail > 0) {
-			mcapi_msg_recv_i(ep1, ret_buf, BUFF_SIZE, &request, &status);
-  			if (status != MCAPI_SUCCESS) { WRONG }
-			if (cmd->ret == 1)
+		while (1) {
+			avail = mcapi_msg_available(ep1, &status);
+			if (avail > 0) {
+				mcapi_msg_recv_i(ep1, ret_buf, BUFF_SIZE, &request, &status);
+  				if (status != MCAPI_SUCCESS) { WRONG }
+				if (cmd->ret == 1)
        			        printf("Core 0 : Audio cmd is executed by core 1. ret=%d\n", cmd->ret);
-			else
+				else
        	        		printf("Core 0 : Audio cmd failed by core 1. ret=%d\n", cmd->ret);
 	               	break;
-		}
+			}
 	
-		count ++;
-		if(count>1)
+			count ++;
+			if(count>1)
 			break;
+		}
+
+
+		mcapi_endpoint_delete(ep1,&status);
+
+		mcapi_finalize(&status);
+		close(client_sockfd);
 	}
-
-
-	mcapi_endpoint_delete(ep1,&status);
-
-	mcapi_finalize(&status);
-
+	close(server_sockfd);
 	return 0;
 }

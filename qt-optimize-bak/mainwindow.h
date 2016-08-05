@@ -1,10 +1,9 @@
-
 #ifndef MAIN_H
 #define MAIN_H
 
 #include <QtGui>
 #include <QWidget>
-
+#include <QUdpSocket>
 //***************************************************************************************************
 
 class QHBoxLayout;
@@ -75,7 +74,8 @@ public:
 
 private slots:
 
-    void openProcess1();
+    //void openProcess1();
+    void sendmsg();
 
     void nextpage();
     void readResult(int exitCode);
@@ -101,6 +101,12 @@ private:
     int m;
     int t;
 
+    int port;
+    //bool isStarted;
+    QUdpSocket *udpSocket;
+
 };
+
+
 
 #endif // MAIN_H
