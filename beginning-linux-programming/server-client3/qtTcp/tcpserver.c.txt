@@ -1,0 +1,48 @@
+    #include "server.h"
+     
+    Server::Server(QObject *parent,int port)
+        :QTcpServer(parent)
+    {
+        listen(QHostAddress::Any,port);//监听所有IP地址和端口
+    }
+     
+    void Server::incomingConnection(int socketDescriptor)//socketDescriptor来自客户端的IP PORT信息
+    {
+        TcpClientSocket *tcpClientSocket=new TcpClientSocket(this);
+        //前面的updateClients(QString,int)是tcpClientSocket信号函数，有新的客户端就会激活，后面的槽函数是服务端重写的函数
+        connect(tcpClientSocket,SIGNAL(updateClients(QString,int)),this,SLOT(updateClients(QString,int)));
+        //同上
+        connect(tcpClientSocket,SIGNAL(disconnected(int)),this,SLOT(slotDisconnected(int)));
+        //服务端绑定socketDescriptor
+        tcpClientSocket->setSocketDescriptor(socketDescriptor);
+        //加入套接字列表中
+        tcpClientSocketList.append(tcpClientSocket);
+    }
+     
+    void Server::updateClients(QString msg,int length)
+    {
+        emit updateServer(msg,length);//通知服务器对话框进行相应的更新
+        for(int i=0;i<tcpClientSocketList.count();i++) //通知所有人，信息广播    
+          {        
+             QTcpSocket *item = tcpClientSocketList.at(i);         
+            if(item->write(msg.toLatin1(),length)!=length)
+            {
+                continue;
+            }
+        }
+    }
+     
+    void Server::slotDisconnected(int descriptor)
+    {
+        for(int i=0;i<tcpClientSocketList.count();i++)     
+         {         
+             QTcpSocket *item = tcpClientSocketList.at(i);         
+            if(item->socketDescriptor()==descriptor)
+            {
+                tcpClientSocketList.removeAt(i);
+                return;
+            }
+        }
+        return;
+    }
+     

@@ -1,0 +1,22 @@
+#ifndef SERVER_H
+#define SERVER_H
+ 
+#include <QTcpServer>
+#include <QObject>
+#include "tcpclientsocket.h"//这个是一个继承与Tcpsocket的类
+class Server : public QTcpServer
+{
+    Q_OBJECT
+public:
+    Server(QObject *parent=0,int port=0);
+    QList<TcpClientSocket*> tcpClientSocketList;//保存所有与服务端建立连接的客户端服务
+signals:
+    void updateServer(QString,int);
+public slots:
+    void updateClients(QString,int);//更新客户端
+    void slotDisconnected(int);//中断连接的槽函数
+protected:
+    void incomingConnection(int socketDescriptor);//新连接函数，捕捉来自客户端的连接
+};
+ 
+#endif // SERVER_H
