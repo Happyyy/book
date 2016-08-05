@@ -6,7 +6,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define MAXDATASIZE 100
+#define MAXDATASIZE 18
 int main()
 {
 	int server_sockfd,server_client_sockfd;
@@ -27,7 +27,7 @@ int main()
 	listen(server_sockfd,5);
 	while(1) {
 		//char ch;
-
+		int i;
 		char buf[MAXDATASIZE];
 		printf("server waiting...\n");
 //accept a connection
@@ -40,6 +40,30 @@ int main()
 	}
 		buf[recvbytes] = '\0';
 		printf("Received: %s",buf);
+		for (i=0; i<MAXDATASIZE; i++)
+		{
+			printf("buf[%d]= %c\n",i,buf[i]);
+		}
+		switch (buf[1]) {
+			case 'v':
+					printf("vv\n");
+	                break;
+	        case 'b':
+	                printf("bbb\n");
+	                break;
+	        case 'm':
+	                printf("mmmmm\n");
+	                break;
+	        case 't':
+	                printf("ttttttt\n");
+	                break;
+	        case 'h':
+	                printf("hhhhhhhhh\n");
+	                break;
+            default:
+	                printf("default\n");
+		 }
+
 		/*system(buf);
 		while ((c=getopt_long(argc, buf, GETOPT_FLAGS, long_opts, NULL)) != -1) {
 		switch (c) {
