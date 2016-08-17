@@ -1,16 +1,19 @@
 #include "mainwindow.h"
+#include <QMessageBox>
+#include <QHostAddress>
 
 Main::Main(QWidget *parent)
 {
     setWindowTitle("Main");
-
-                                            //设置背景图片
-                                            // QPixmap pixmap("/home/test/Downloads/fg.png");
-                                            // QPalette palette;
-                                            // palette.setBrush(this->backgroundRole(),QBrush(pixmap));
-                                            // this->setPalette(palette);
-                                            // this->setMask(pixmap.mask()); //可以将图片中透明部分显示为透明的
-                                            // this->setAutoFillBackground(true);
+    port =9734;
+    udpSocket = new QUdpSocket(this);
+     //设置背景图片
+     // QPixmap pixmap("/home/test/Downloads/fg.png");
+     // QPalette palette;
+     // palette.setBrush(this->backgroundRole(),QBrush(pixmap));
+     // this->setPalette(palette);
+     // this->setMask(pixmap.mask()); //可以将图片中透明部分显示为透明的
+     // this->setAutoFillBackground(true);
 
 
     p = new QProcess(this);
@@ -97,12 +100,17 @@ Main::Main(QWidget *parent)
      QObject::connect(slider, SIGNAL(valueChanged(int)), nextPage->slider, SLOT(setValue(int)));
      QObject::connect(nextPage->slider, SIGNAL(valueChanged(int)), slider, SLOT(setValue(int)));
 
-//四个滑动条中任何一个值改变将启动程序
+/*//四个滑动条中任何一个值改变将启动程序
      QObject::connect(slider, SIGNAL(valueChanged(int)), this, SLOT(openProcess1()));
      QObject::connect(bass, SIGNAL(valueChanged(int)), this, SLOT(openProcess1()));
      QObject::connect(mid, SIGNAL(valueChanged(int)), this, SLOT(openProcess1()));
      QObject::connect(treble, SIGNAL(valueChanged(int)), this, SLOT(openProcess1()));
-
+*/
+//四个滑动条中任何一个值改变将send
+     QObject::connect(slider, SIGNAL(valueChanged(int)), this, SLOT(sendmsg()));
+     QObject::connect(bass, SIGNAL(valueChanged(int)), this, SLOT(sendmsg()));
+     QObject::connect(mid, SIGNAL(valueChanged(int)), this, SLOT(sendmsg()));
+     QObject::connect(treble, SIGNAL(valueChanged(int)), this, SLOT(sendmsg()));
 //*************布局************************
      toplayout = new QGridLayout;
      layout1 = new QVBoxLayout;
@@ -149,7 +157,7 @@ Main::~Main()
 }
 
 
-void Main::openProcess1()
+/*void Main::openProcess1()
  {
 
      v=slider->value();
@@ -166,8 +174,32 @@ void Main::openProcess1()
      p->start("/demo/stune",QStringList()<<"-v"<<p1<<"-b"<<p2<<"-m"<<p3<<"-t"<<p4);//调用程序并传值
 
     connect(p, SIGNAL(finished(int)), this, SLOT(readResult(int)));
- }
+ }*/
+void Main::sendmsg()
+ {
+    v=slider->value();
+    b=bass->value();
+    m=mid->value();
+    t=treble->value();
+    QString p1 = QString("%1").arg(v);
+    QString p2= QString("%1").arg(b);
+    QString p3 = QString("%1").arg(m);
+    QString p4= QString("%1").arg(t);
 
+    QString msg = "-v"+p1+"-t"+p2+"-b"+p3+"-m"+p4;
+
+     int length=0;
+     if(msg=="")
+     {
+               return;
+     }
+     if((length=udpSocket->writeDatagram(msg.toLatin1(),msg.length(),
+                                         QHostAddress::Broadcast,port))!=msg.length())
+     {
+                return;
+     }
+     //TextLineEdit->clear();
+ }
 
 void Main::readResult(int exitCode)
 {
