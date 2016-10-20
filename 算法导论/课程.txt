@@ -1,0 +1,11 @@
+Course Meeting Times
+Lectures: 2 sessions / week, 1.5 hours / session
+Recitations: 1 session / week, 1 hour / session
+
+Course Highlights
+This course features a complete set of lecture notes and videos. The course textbook was co-written by Prof. Leiserson.
+
+Course Description
+This course teaches techniques for the design and analysis of efficient algorithms, emphasizing methods useful in practice. Topics covered include: sorting; search trees, heaps, and hashing; divide-and-conquer; dynamic programming; amortized analysis; graph algorithms; shortest paths; network flow; computational geometry; number-theoretic algorithms; polynomial and matrix calculations; caching; and parallel computing.
+
+This course was also taught as part of the Singapore-MIT Alliance (SMA) programme as course number SMA 5503 (Analysis and Design of Algorithms).
